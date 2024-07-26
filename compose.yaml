@@ -1,0 +1,42 @@
+services:
+  app:
+    container_name: "app"
+    build: .
+    command: bash -c "alembic upgrade head && uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+    restart: always
+    networks:
+      - "invt_network"
+
+  db:
+    container_name: "db"
+    build:
+      context: .
+      dockerfile: Dockerfile.pgvector
+    restart: always
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
+      - ./initdb:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_USER=${POSTGRES_USER}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=${POSTGRES_DB}
+    env_file:
+      - .env
+    networks:
+      - "invt_network"
+
+volumes:
+  postgres_data:
+
+
+networks:
+  invt_network:
+    driver: bridge
